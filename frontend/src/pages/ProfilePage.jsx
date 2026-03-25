@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { User, Coins, History, Gift, ChevronRight, ChevronLeft, Minus, Plus, Sparkles, ArrowRight, Trophy, Camera, Edit2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { User, Coins, History, Gift, ChevronRight, ChevronLeft, Minus, Plus, Sparkles, ArrowRight, Trophy, Camera, Edit2, Settings, X } from 'lucide-react';
 import { getMemberProfile, getPointsRecords, updateMemberProfile, uploadImage, getBalanceRecords } from '../api';
 import { getOpenId } from '../utils';
 
@@ -124,10 +124,10 @@ const ProfilePage = () => {
             )}
           </div>
           <button
-            onClick={handleEdit}
+            onClick={() => navigate('/settings')}
             className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
           >
-            <Edit2 className="w-5 h-5 text-white" />
+            <Settings className="w-5 h-5 text-white" />
           </button>
         </motion.div>
 
@@ -351,54 +351,69 @@ const ProfilePage = () => {
         </motion.div>
       </div>
 
-      {editing && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-800 rounded-2xl max-w-sm w-full p-6">
-            <h3 className="font-semibold text-lg mb-4">编辑资料</h3>
-            <div className="space-y-4">
-              <div className="flex justify-center">
-                <div className="relative">
-                  <div className="w-20 h-20 rounded-2xl bg-dark-900 overflow-hidden flex items-center justify-center">
-                    {editForm.headimgurl ? (
-                      <img src={editForm.headimgurl} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <User className="w-10 h-10 text-white/40" />
-                    )}
+      {/* Edit Profile Modal */}
+      <AnimatePresence>
+        {editing && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 z-50"
+              onClick={() => setEditing(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: "-50%", x: "-50%" }}
+              animate={{ opacity: 1, scale: 1, y: "-50%", x: "-50%" }}
+              exit={{ opacity: 0, scale: 0.95, y: "-50%", x: "-50%" }}
+              className="fixed top-1/2 left-1/2 w-[90%] max-w-sm z-[60] bg-dark-800 rounded-3xl p-6 border border-white/10 shadow-2xl"
+            >
+              <h3 className="font-semibold text-lg mb-6 text-center">编辑资料</h3>
+              <div className="space-y-6">
+                <div className="flex justify-center">
+                  <div className="relative">
+                    <div className="w-24 h-24 rounded-full bg-dark-900 overflow-hidden flex items-center justify-center border-4 border-white/5">
+                      {editForm.headimgurl ? (
+                        <img src={editForm.headimgurl} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-10 h-10 text-white/40" />
+                      )}
+                    </div>
+                    <label className="absolute bottom-0 right-0 w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:scale-110 transition-transform">
+                      <Camera className="w-4 h-4 text-white" />
+                      <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploading} />
+                    </label>
                   </div>
-                  <label className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center cursor-pointer">
-                    <Camera className="w-4 h-4 text-white" />
-                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploading} />
-                  </label>
+                </div>
+                <div>
+                  <label className="block text-sm text-white/60 mb-2 ml-1">昵称</label>
+                  <input
+                    type="text"
+                    value={editForm.nickname}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, nickname: e.target.value }))}
+                    className="w-full px-4 py-3.5 bg-dark-900 rounded-2xl border border-white/10 text-white focus:outline-none focus:border-brand-primary/50 focus:ring-1 focus:ring-brand-primary/50 transition-all"
+                    placeholder="请输入昵称"
+                  />
                 </div>
               </div>
-              <div>
-                <label className="block text-sm text-white/60 mb-2">昵称</label>
-                <input
-                  type="text"
-                  value={editForm.nickname}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, nickname: e.target.value }))}
-                  className="w-full px-4 py-3 bg-dark-900 rounded-xl border border-white/10 text-white"
-                  placeholder="请输入昵称"
-                />
+              <div className="flex gap-3 mt-8">
+                <button
+                  onClick={() => setEditing(false)}
+                  className="flex-1 py-3 border border-white/20 hover:bg-white/5 rounded-xl text-white transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="flex-1 py-3 bg-brand-primary hover:bg-brand-primary/90 rounded-xl text-white font-medium transition-colors shadow-glow-sm"
+                >
+                  保存
+                </button>
               </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setEditing(false)}
-                className="flex-1 py-3 border border-white/20 rounded-xl text-white"
-              >
-                取消
-              </button>
-              <button
-                onClick={handleSave}
-                className="flex-1 py-3 bg-primary rounded-xl text-white"
-              >
-                保存
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

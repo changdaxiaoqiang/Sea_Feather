@@ -56,6 +56,13 @@ export const deleteProduct = (id) => api.delete(`/admin/products/${id}`);
 
 export const getRedemptions = () => api.get('/admin/redemptions');
 
+export const getSystemUsers = () => api.get('/system/users');
+export const createSystemUser = (data) => api.post('/system/users', data);
+export const updateSystemUser = (id, data) => api.put(`/system/users/${id}`, data);
+export const deleteSystemUser = (id) => api.delete(`/system/users/${id}`);
+export const getSystemPermissions = () => api.get('/system/permissions');
+export const systemLogin = (data) => api.post('/system/login', data);
+
 export const uploadImage = (formData) => {
   return axios.post(`${API_BASE}/admin/upload`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
