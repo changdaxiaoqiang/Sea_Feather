@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Plus, X, Image as ImageIcon, Calculator, Users, CheckCircle, XCircle } from 'lucide-react';
+import { ChevronLeft, Plus, X, Image as ImageIcon, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { createActivity, updateActivity, getActivity, uploadImage, getActivityRegistrations, calculateActivity, getActivitySummary, markRegistrationPaid } from '../../api';
+import { createActivity, updateActivity, getActivity, uploadImage } from '../../api';
 import CourtDisplay from '../../components/CourtDisplay';
 
 const ALL_COURTS = [1, 2, 3, 5, 6];
@@ -11,14 +11,10 @@ const AdminActivityForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
-  const showCost = id && window.location.pathname.includes('/summary');
 
   const [loading, setLoading] = useState(isEdit);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [summary, setSummary] = useState(null);
-  const [registrations, setRegistrations] = useState([]);
-  const [paymentMethods, setPaymentMethods] = useState({});
   const [form, setForm] = useState({
     title: '',
     type: 'regular',
@@ -34,6 +30,7 @@ const AdminActivityForm = () => {
     price_dinner_only: 50,
     max_participants: 20,
     max_waitlist: 5,
+    registration_key: '',
     status: 'active',
     actual_court_fee: 0,
     actual_ball_count: 0,
@@ -43,7 +40,6 @@ const AdminActivityForm = () => {
   useEffect(() => {
     if (isEdit) {
       loadActivity();
-      loadSummary();
     }
   }, [id]);
 
@@ -59,16 +55,6 @@ const AdminActivityForm = () => {
       alert('加载失败');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadSummary = async () => {
-    try {
-      const res = await getActivitySummary(id);
-      setSummary(res);
-      setRegistrations(res.registrations);
-    } catch (error) {
-      console.error('Failed to load summary:', error);
     }
   };
 
@@ -135,34 +121,6 @@ const AdminActivityForm = () => {
     }
   };
 
-  const handleCalculate = async () => {
-    try {
-      await updateActivity(id, {
-        ...form,
-        courts: form.courts,
-        images: form.images
-      });
-      const result = await calculateActivity(id);
-      alert(result.message);
-      loadSummary();
-    } catch (error) {
-      alert('计算失败');
-    }
-  };
-
-  const handlePaymentMethodChange = (regId, method) => {
-    setPaymentMethods(prev => ({ ...prev, [regId]: method }));
-  };
-
-  const togglePaid = async (regId, isPaid, paymentMethod) => {
-    try {
-      await markRegistrationPaid(regId, isPaid, paymentMethod);
-      loadSummary();
-    } catch (error) {
-      alert('更新失败: ' + (error.response?.data?.error || error.message));
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -181,15 +139,7 @@ const AdminActivityForm = () => {
           <ChevronLeft className="w-6 h-6" />
         </button>
         <h1 className="text-2xl font-bold">{isEdit ? '编辑活动' : '新建活动'}</h1>
-        {isEdit && (
-          <button
-            onClick={() => navigate(`/admin/activities/${id}/edit/summary`)}
-            className="ml-auto px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors flex items-center gap-2"
-          >
-            <Calculator className="w-5 h-5" />
-            费用结算
-          </button>
-        )}
+
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white/5 rounded-xl p-6 space-y-6 border border-white/10">
@@ -352,7 +302,7 @@ const AdminActivityForm = () => {
                 type="number"
                 value={form.price_activity}
                 onChange={(e) => handleChange('price_activity', parseInt(e.target.value) || 0)}
-                className="w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                className="w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-gray-900"
               />
             </div>
           </div>
@@ -364,7 +314,7 @@ const AdminActivityForm = () => {
                 type="number"
                 value={form.price_dinner}
                 onChange={(e) => handleChange('price_dinner', parseInt(e.target.value) || 0)}
-                className="w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                className="w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-gray-900"
               />
             </div>
           </div>
@@ -376,7 +326,7 @@ const AdminActivityForm = () => {
                 type="number"
                 value={form.price_dinner_only}
                 onChange={(e) => handleChange('price_dinner_only', parseInt(e.target.value) || 0)}
-                className="w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                className="w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-gray-900"
               />
             </div>
           </div>
@@ -401,123 +351,22 @@ const AdminActivityForm = () => {
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-gray-900"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">报名密钥（4位数字，不填则不启用）</label>
+            <input
+              type="text"
+              maxLength={4}
+              value={form.registration_key || ''}
+              onChange={(e) => handleChange('registration_key', e.target.value.replace(/\D/g, '').slice(0, 4))}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-gray-900"
+              placeholder="例如：1234"
+            />
+          </div>
         </div>
 
-        {isEdit && (
-          <div className="border-t pt-6">
-            <h3 className="font-semibold mb-4">活动结束后 - 实际费用录入</h3>
-            <div className="grid grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-white mb-2">场地费总计</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">¥</span>
-                  <input
-                    type="number"
-                    value={form.actual_court_fee}
-                    onChange={(e) => handleChange('actual_court_fee', parseFloat(e.target.value) || 0)}
-                    className="w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                    placeholder="输入场地费"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-white mb-2">用球数</label>
-                <input
-                  type="number"
-                  value={form.actual_ball_count}
-                  onChange={(e) => handleChange('actual_ball_count', parseInt(e.target.value) || 0)}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-gray-900"
-                  placeholder="消耗球数"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-white mb-2">球单价</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">¥</span>
-                  <input
-                    type="number"
-                    value={form.actual_ball_price}
-                    onChange={(e) => handleChange('actual_ball_price', parseFloat(e.target.value) || 0)}
-                    className="w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                    placeholder="单价"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 flex gap-4">
-              <button
-                type="button"
-                onClick={handleCalculate}
-                className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors flex items-center gap-2"
-              >
-                <Calculator className="w-5 h-5" />
-                计算费用
-              </button>
-              {summary && (
-                <div className="flex items-center gap-4 text-sm text-white/60">
-                  <span>预计总费用: <strong className="text-amber-600">¥{summary.summary.totalExpected}</strong></span>
-                  <span>已付: <strong className="text-green-600">¥{summary.summary.totalPaid}</strong></span>
-                  <span>待收: <strong className="text-red-600">¥{summary.summary.unpaidAmount}</strong></span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
-        {summary && registrations.length > 0 && (
-          <div className="border-t pt-6">
-            <h3 className="font-semibold mb-4">报名成员</h3>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {registrations.map((reg) => (
-                <div key={reg.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                      <Users className="w-4 h-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{reg.nickname}</p>
-                      <p className="text-xs text-white/60">
-                        {reg.registration_type === 'activity' ? '仅活动' : reg.registration_type === 'both' ? '活动+晚宴' : '仅晚宴'}
-                        {reg.actual_fee > 0 && ` - ¥${reg.actual_fee}`}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {reg.actual_fee > 0 ? (
-                      reg.is_paid ? (
-                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm flex items-center gap-1">
-                          <CheckCircle className="w-4 h-4" /> 
-                          {reg.payment_method === 'wechat' ? '微信' : reg.payment_method === 'card' ? '卡扣' : '已付'}
-                        </span>
-                      ) : (
-                        <>
-                          <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm">待收 ¥{reg.actual_fee}</span>
-                          <select
-                            value={paymentMethods[reg.id] || 'wechat'}
-                            onChange={(e) => handlePaymentMethodChange(reg.id, e.target.value)}
-                            className="px-2 py-1 text-sm border rounded-lg text-gray-900"
-                          >
-                            <option value="wechat">微信转账</option>
-                            <option value="card">会员卡扣除</option>
-                            <option value="cash">现金</option>
-                          </select>
-                          <button
-                            onClick={() => togglePaid(reg.id, true, paymentMethods[reg.id] || 'wechat')}
-                            className="px-3 py-1 bg-green-500 text-white rounded-full text-sm hover:bg-green-600"
-                          >
-                            确认收款
-                          </button>
-                        </>
-                      )
-                    ) : (
-                      <span className="px-3 py-1 bg-white/10 text-white/60 rounded-full text-sm">待计算</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+
+
 
         <div className="flex justify-end gap-4 pt-6 border-t border-white/20">
           <button

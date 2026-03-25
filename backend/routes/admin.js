@@ -9,11 +9,11 @@ router.get('/activities', (req, res) => {
       start_time: row[4], end_time: row[5], images: row[6], courts: row[7],
       location: row[8], transportation: row[9], price_activity: row[10],
       price_dinner: row[11], price_dinner_only: row[12], max_participants: row[13],
-      max_waitlist: row[14], status: row[15],
-      actual_court_fee: row[16] || 0,
-      actual_ball_count: row[17] || 0,
-      actual_ball_price: row[18] || 0,
-      created_at: row[19], updated_at: row[20]
+      max_waitlist: row[14], status: row[15], registration_key: row[16] || '',
+      actual_court_fee: row[17] || 0,
+      actual_ball_count: row[18] || 0,
+      actual_ball_price: row[19] || 0,
+      created_at: row[20], updated_at: row[21]
     })) : [];
     
     const withStats = result.map(a => {
@@ -71,7 +71,10 @@ router.post('/activities', (req, res) => {
       start_time: row[4], end_time: row[5], images: row[6], courts: row[7],
       location: row[8], transportation: row[9], price_activity: row[10],
       price_dinner: row[11], price_dinner_only: row[12], max_participants: row[13],
-      max_waitlist: row[14], status: row[15]
+      max_waitlist: row[14], status: row[15], registration_key: row[16] || '',
+      actual_court_fee: row[17] || 0,
+      actual_ball_count: row[18] || 0,
+      actual_ball_price: row[19] || 0
     };
     
     res.json({
@@ -127,10 +130,11 @@ router.put('/activities/:id', (req, res) => {
       start_time: row[4], end_time: row[5], images: row[6], courts: row[7],
       location: row[8], transportation: row[9], price_activity: row[10],
       price_dinner: row[11], price_dinner_only: row[12], max_participants: row[13],
-      max_waitlist: row[14], status: row[15],
-      actual_court_fee: row[16] || 0,
-      actual_ball_count: row[17] || 0,
-      actual_ball_price: row[18] || 0
+      max_waitlist: row[14], status: row[15], registration_key: row[16] || '',
+      actual_court_fee: row[17] || 0,
+      actual_ball_count: row[18] || 0,
+      actual_ball_price: row[19] || 0,
+      created_at: row[20], updated_at: row[21]
     };
     
     res.json({
@@ -230,7 +234,7 @@ router.post('/activities/:id/summary', (req, res) => {
     };
     
     const registrations = req.db.exec(`
-      SELECT r.*, m.nickname, m.headimgurl
+      SELECT r.*, m.nickname, m.headimgurl, m.is_member, m.balance
       FROM registrations r
       JOIN members m ON r.member_id = m.id
       WHERE r.activity_id = ? AND r.status IN ('confirmed', 'waitlist')
@@ -241,7 +245,8 @@ router.post('/activities/:id/summary', (req, res) => {
       id: row[0], activity_id: row[1], member_id: row[2], registration_type: row[3], 
       status: row[4], waitlist_order: row[5], actual_fee: row[6], is_paid: row[7],
       payment_method: row[8], paid_at: row[9],
-      member_nickname: row[10], member_headimgurl: row[11]
+      member_nickname: row[10], member_headimgurl: row[11],
+      is_member: row[12], member_balance: row[13]
     })) : [];
     
     const totalExpected = regs.reduce((sum, r) => sum + (r.actual_fee || 0), 0);
@@ -267,7 +272,7 @@ router.post('/activities/:id/summary', (req, res) => {
 router.post('/registrations/:id/paid', (req, res) => {
   try {
     const { id } = req.params;
-    const { is_paid, payment_method } = req.body;
+    const { is_paid, payment_method, use_balance } = req.body;
     
     const regResult = req.db.exec('SELECT * FROM registrations WHERE id = ?', [id]);
     if (regResult.length === 0 || regResult[0].values.length === 0) {
@@ -283,30 +288,41 @@ router.post('/registrations/:id/paid', (req, res) => {
     const activityResult = req.db.exec('SELECT title FROM activities WHERE id = ?', [activityId]);
     const activityTitle = activityResult.length > 0 && activityResult[0].values.length > 0 ? activityResult[0].values[0][0] : '活动';
     
+    const memberResult = req.db.exec('SELECT balance, nickname FROM members WHERE id = ?', [memberId]);
+    if (memberResult.length === 0 || memberResult[0].values.length === 0) {
+      return res.status(404).json({ error: '用户不存在' });
+    }
+    
+    const balance = memberResult[0].values[0][0];
+    const nickname = memberResult[0].values[0][1];
+
+    let deductionAmount = 0;
+
     if (is_paid && payment_method === 'card' && actualFee > 0) {
-      const memberResult = req.db.exec('SELECT balance, nickname FROM members WHERE id = ?', [memberId]);
-      if (memberResult.length === 0 || memberResult[0].values.length === 0) {
-        return res.status(404).json({ error: '用户不存在' });
-      }
-      
-      const balance = memberResult[0].values[0][0];
       if (balance < actualFee) {
         return res.status(400).json({ error: '余额不足' });
       }
-      
-      req.db.run('UPDATE members SET balance = balance - ? WHERE id = ?', [actualFee, memberId]);
+      deductionAmount = actualFee;
+    } else if (is_paid && use_balance > 0 && actualFee > 0) {
+      if (balance < use_balance) {
+        return res.status(400).json({ error: '余额不足以支付指定的抵扣金额' });
+      }
+      deductionAmount = use_balance;
+    }
+    
+    if (deductionAmount > 0) {
+      req.db.run('UPDATE members SET balance = balance - ? WHERE id = ?', [deductionAmount, memberId]);
       req.db.run(
         'INSERT INTO balance_records (member_id, type, amount, payment_method, source, reference_id, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [memberId, 'deduction', -actualFee, 'card', 'activity_payment', activityId, `活动扣费: ${activityTitle} - ¥${actualFee}`, timestamp]
+        [memberId, 'deduction', -deductionAmount, 'card', 'activity_payment', activityId, `活动扣费: ${activityTitle} - ¥${deductionAmount}`, timestamp]
       );
     }
     
-    if (is_paid && payment_method !== 'card' && actualFee > 0) {
-      const memberResult = req.db.exec('SELECT nickname FROM members WHERE id = ?', [memberId]);
-      const nickname = memberResult.length > 0 && memberResult[0].values.length > 0 ? memberResult[0].values[0][0] : '用户';
+    const remainingFee = actualFee - deductionAmount;
+    if (is_paid && payment_method !== 'card' && remainingFee > 0) {
       req.db.run(
         'INSERT INTO balance_records (member_id, type, amount, payment_method, source, reference_id, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [memberId, 'income', actualFee, payment_method, 'activity_payment', activityId, `活动缴费: ${activityTitle} - ¥${actualFee}`, timestamp]
+        [memberId, 'income', remainingFee, payment_method, 'activity_payment', activityId, `活动缴费: ${activityTitle} - ¥${remainingFee}`, timestamp]
       );
     }
     

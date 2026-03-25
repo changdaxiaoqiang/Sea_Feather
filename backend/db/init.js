@@ -50,6 +50,7 @@ async function initDB() {
         price_dinner_only REAL DEFAULT 0,
         max_participants INTEGER DEFAULT 0,
         max_waitlist INTEGER DEFAULT 0,
+        registration_key TEXT DEFAULT '',
         status TEXT DEFAULT 'pending',
         actual_court_fee REAL DEFAULT 0,
         actual_ball_count INTEGER DEFAULT 0,

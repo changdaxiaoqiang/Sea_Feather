@@ -59,7 +59,7 @@ const ProductsPage = () => {
   };
 
   return (
-    <div className="min-h-screen pb-28 bg-dark-900">
+    <div className="min-h-full pb-6 bg-dark-900">
       <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}

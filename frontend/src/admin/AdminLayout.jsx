@@ -28,7 +28,7 @@ const AdminLayout = () => {
               </div>
             </div>
             <div>
-              <h1 className="text-white font-display font-bold tracking-wide">Sea Feather</h1>
+              <h1 className="text-white font-display font-bold tracking-wide">Badminton</h1>
               <p className="text-white/40 text-xs">管理后台</p>
             </div>
           </div>

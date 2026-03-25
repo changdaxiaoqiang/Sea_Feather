@@ -4,6 +4,7 @@ import { Calendar, Users, Clock, Trophy, Activity, ChevronRight, Sparkles, Flame
 import { motion, AnimatePresence } from 'framer-motion';
 import { getActivities } from '../api';
 import { formatDate, formatTime, getActivityTypeName, isPastActivity } from '../utils';
+import logoImage from '../assets/logo.png';
 
 const FloatingOrb = ({ delay, size, x, y }) => (
   <motion.div
@@ -113,7 +114,7 @@ const ActivityCard = ({ activity, index }) => {
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
+              <div className="flex items-baseline gap-1">
                 <span className="font-display text-2xl font-bold text-gradient">
                   ¥{activity.price_activity}
                 </span>
@@ -146,28 +147,34 @@ const ActivityCard = ({ activity, index }) => {
 
 const HomePage = () => {
   const [activities, setActivities] = useState([]);
+  const [member, setMember] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadActivities();
+    loadData();
   }, []);
 
-  const loadActivities = async () => {
+  const loadData = async () => {
     try {
-      const res = await getActivities({ status: 'active' });
+      const openid = localStorage.getItem('sf_openid') || 'test_user_1';
+      const [activitiesRes, profileRes] = await Promise.all([
+        getActivities({ status: 'active' }),
+        import('../api').then(m => m.getMemberProfile(openid))
+      ]);
       const today = new Date().toISOString().split('T')[0];
-      const upcoming = res.data.filter(a => a.activity_date >= today);
-      const past = res.data.filter(a => a.activity_date < today);
+      const upcoming = activitiesRes.data.filter(a => a.activity_date >= today);
+      const past = activitiesRes.data.filter(a => a.activity_date < today);
       setActivities([...upcoming, ...past.reverse()]);
+      setMember(profileRes);
     } catch (error) {
-      console.error('Failed to load activities:', error);
+      console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen pb-28">
+    <div className="min-h-full pb-6">
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-brand-primary/10 via-transparent to-transparent" />
         
@@ -181,20 +188,20 @@ const HomePage = () => {
               <div className="flex items-center gap-2 mb-1">
                 <Flame className="w-5 h-5 text-brand-primary" />
                 <span className="text-brand-primary text-sm font-medium tracking-wider font-display uppercase">
-                  Sea Feather
+                  Badminton
                 </span>
               </div>
               <h1 className="font-display text-4xl font-bold tracking-tight">
-                羽毛球<span className="text-gradient">活动</span>
+                羽球飞舞
               </h1>
             </div>
             <motion.div
               animate={{ rotate: [0, 10, -10, 0] }}
               transition={{ duration: 2, repeat: Infinity }}
-              className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-primary to-brand-secondary p-0.5"
+              className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-primary to-brand-secondary p-0.5 overflow-hidden"
             >
-              <div className="w-full h-full rounded-2xl bg-dark-900 flex items-center justify-center">
-                <Trophy className="w-8 h-8 text-brand-primary" />
+              <div className="w-full h-full rounded-2xl bg-dark-900 flex items-center justify-center overflow-hidden">
+                <img src={logoImage} alt="Logo" className="w-full h-full object-cover scale-110" />
               </div>
             </motion.div>
           </motion.div>
@@ -217,14 +224,28 @@ const HomePage = () => {
 
       <div className="px-6">
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="flex items-center gap-2 mb-6"
-        >
-          <Sparkles className="w-5 h-5 text-brand-primary" />
-          <span className="font-display text-lg font-semibold tracking-wide">近期活动</span>
-        </motion.div>
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="flex items-center justify-between mb-6"
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-brand-primary" />
+              <span className="font-display text-lg font-semibold tracking-wide">近期活动</span>
+            </div>
+            {member && (
+              <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.location.href='/profile'}>
+                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center overflow-hidden">
+                  {member.headimgurl ? (
+                    <img src={member.headimgurl} alt="avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <Users className="w-4 h-4 text-white/40" />
+                  )}
+                </div>
+                <p className="font-medium text-white text-sm">{member.nickname || '用户'}</p>
+              </div>
+            )}
+          </motion.div>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">

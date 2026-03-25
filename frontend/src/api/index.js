@@ -40,7 +40,7 @@ export const calculateActivity = (id) => api.post(`/admin/activities/${id}/calcu
 export const getActivitySummary = (id) => api.post(`/admin/activities/${id}/summary`);
 export const getActivityRegistrations = (id, params) => api.get(`/admin/activities/${id}/registrations`, { params });
 
-export const markRegistrationPaid = (id, isPaid, paymentMethod) => api.post(`/admin/registrations/${id}/paid`, { is_paid: isPaid, payment_method: paymentMethod });
+export const markRegistrationPaid = (id, isPaid, paymentMethod, useBalance) => api.post(`/admin/registrations/${id}/paid`, { is_paid: isPaid, payment_method: paymentMethod, use_balance: useBalance });
 export const markAllPaid = (id) => api.post(`/admin/registrations/${id}/pay-all`);
 
 export const getAdminMembers = (params) => api.get('/admin/members', { params });

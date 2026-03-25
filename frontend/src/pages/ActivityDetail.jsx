@@ -56,13 +56,24 @@ const ActivityDetail = () => {
   const canRegister = !isPast && activity.status === 'active';
 
   return (
-    <div className="min-h-screen pb-32 bg-dark-900">
+    <div className="min-h-screen pb-28 bg-dark-900">
+      <div className="fixed top-0 left-0 right-0 z-50 h-14 bg-dark-900/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-center">
+        <button
+          onClick={() => navigate(-1)}
+          className="absolute left-4 w-11 h-11 flex items-center justify-center"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h1 className="font-semibold text-lg">活动详情</h1>
+      </div>
+      
       <AnimatePresence mode="wait">
         <motion.div
           key={id}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          className="pt-14"
         >
           {activity.images && activity.images.length > 0 && (
             <div className="relative h-72 overflow-hidden">
@@ -77,13 +88,6 @@ const ActivityDetail = () => {
               />
               
               <div className="absolute inset-0 bg-gradient-to-t from-dark-900 via-dark-900/30 to-transparent" />
-              
-              <button
-                onClick={() => navigate(-1)}
-                className="absolute top-4 left-4 w-11 h-11 bg-dark-900/60 backdrop-blur-xl rounded-2xl flex items-center justify-center border border-white/10"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
               
               {activity.images.length > 1 && (
                 <>
@@ -219,19 +223,26 @@ const ActivityDetail = () => {
               </div>
               
               <div className="flex items-center justify-between mb-3">
-                <span className="text-white/50">已报名</span>
+                <span className="text-white/50">打球</span>
                 <span className="text-white font-semibold">
-                  {activity.confirmed_count} / {activity.max_participants} 人
+                  {activity.activity_count || 0} / {activity.max_participants} 人
                 </span>
               </div>
               
               <div className="w-full h-2 bg-dark-700 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: `${Math.min((activity.confirmed_count / activity.max_participants) * 100, 100)}%` }}
+                  animate={{ width: `${Math.min(((activity.activity_count || 0) / activity.max_participants) * 100, 100)}%` }}
                   transition={{ duration: 1, delay: 0.6 }}
                   className="h-full bg-gradient-to-r from-brand-primary to-brand-secondary rounded-full"
                 />
+              </div>
+              
+              <div className="flex items-center justify-between mt-3">
+                <span className="text-white/50">晚宴</span>
+                <span className="text-white font-semibold">
+                  {activity.dinner_count || 0} 人
+                </span>
               </div>
               
               {activity.waitlist_count > 0 && (
@@ -242,31 +253,7 @@ const ActivityDetail = () => {
               )}
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-              className="card-glass rounded-3xl p-5"
-            >
-              <p className="text-white font-semibold mb-4">报名费用（活动结束后结算）</p>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-dark-800/50 rounded-xl">
-                  <span className="text-white/70">仅活动</span>
-                  <span className="font-display text-xl font-bold text-gradient">¥{activity.price_activity}</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-brand-primary/10 rounded-xl border border-brand-primary/20">
-                  <span className="text-white/70">活动+晚宴</span>
-                  <span className="font-display text-xl font-bold text-brand-primary">¥{activity.price_dinner}</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-dark-800/50 rounded-xl">
-                  <span className="text-white/70">仅晚宴</span>
-                  <span className="font-display text-xl font-bold text-gradient">¥{activity.price_dinner_only}</span>
-                </div>
-              </div>
-              <p className="mt-4 text-white/40 text-sm">
-                实际费用 = 场地费 + 用球费，活动结束后根据实际消耗计算
-              </p>
-            </motion.div>
+
           </div>
         </motion.div>
       </AnimatePresence>
@@ -274,7 +261,7 @@ const ActivityDetail = () => {
       <motion.div
         initial={{ y: 100 }}
         animate={{ y: 0 }}
-        className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-dark-900 via-dark-900 to-transparent pt-12"
+        className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-dark-900 via-dark-900 to-transparent pt-12 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]"
       >
         <div className="max-w-[430px] mx-auto">
           <button
@@ -290,7 +277,6 @@ const ActivityDetail = () => {
               '活动已结束'
             ) : (
               <>
-                <Check className="w-5 h-5" />
                 立即报名
               </>
             )}

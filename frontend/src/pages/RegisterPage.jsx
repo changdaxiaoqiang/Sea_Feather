@@ -1,21 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ChevronLeft, Check, UtensilsCrossed, Trophy, ArrowRight, MessageCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, Check, UtensilsCrossed, Trophy, ArrowRight, MessageCircle, Key, X } from 'lucide-react';
 import { getActivity, registerActivity, getMemberProfile } from '../api';
 import { formatDate, formatTime, getOpenId } from '../utils';
+
+const FloatingOrb = ({ delay, size, x, y }) => (
+  <motion.div
+    className="absolute rounded-full bg-gradient-to-br from-brand-primary/20 to-brand-secondary/10 blur-3xl"
+    style={{ width: size, height: size, left: x, top: y }}
+    animate={{ y: [0, -20, 0], opacity: [0.3, 0.5, 0.3] }}
+    transition={{ duration: 6, delay, repeat: Infinity, ease: 'easeInOut' }}
+  />
+);
+
+const Toast = ({ message, type, onClose }) => (
+  <motion.div
+    initial={{ opacity: 0, y: -50, x: "-50%" }}
+    animate={{ opacity: 1, y: 0, x: "-50%" }}
+    exit={{ opacity: 0, y: -50, x: "-50%" }}
+    className="fixed left-1/2 top-20 z-50 w-max max-w-[calc(100vw-2rem)]"
+  >
+    <div className={`px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 ${
+      type === 'error' ? 'bg-red-500/80' : 'bg-green-500/80'
+    } backdrop-blur-sm`}>
+      <span className="text-white font-medium break-words">{message}</span>
+      <button onClick={onClose} className="p-1 hover:bg-white/20 rounded shrink-0">
+        <X className="w-4 h-4 text-white" />
+      </button>
+    </div>
+  </motion.div>
+);
 
 const TypeOption = ({ type, label, price, selected, onSelect, icon, badge }) => (
   <motion.button
     whileTap={{ scale: 0.98 }}
     onClick={() => onSelect(type)}
-    className={`w-full p-5 rounded-2xl border-2 transition-all duration-300 flex items-center gap-4 ${
+    className={`w-full p-4 rounded-2xl border-2 transition-all duration-300 flex items-center gap-4 ${
       selected
-        ? 'border-brand-primary bg-brand-primary/10 shadow-glow-sm'
-        : 'border-white/10 bg-dark-800/50 hover:border-white/20'
+        ? 'border-brand-primary bg-gradient-to-r from-brand-primary/20 to-brand-secondary/10 shadow-glow-sm'
+        : 'border-white/5 bg-dark-800/30 hover:border-white/10'
     }`}
   >
-    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
+    <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
       selected
         ? 'bg-gradient-to-br from-brand-primary to-brand-secondary shadow-glow-sm'
         : 'bg-dark-700'
@@ -26,17 +53,17 @@ const TypeOption = ({ type, label, price, selected, onSelect, icon, badge }) => 
     </div>
     <div className="flex-1 text-left">
       <div className="flex items-center gap-2">
-        <span className="font-semibold text-white">{label}</span>
+        <span className="font-medium text-white">{label}</span>
         {badge && (
-          <span className="px-2 py-0.5 bg-brand-primary text-white text-xs font-bold rounded-full">
+          <span className="px-2 py-0.5 bg-gradient-to-r from-brand-primary to-brand-secondary text-white text-xs font-bold rounded-full shadow-glow-sm">
             {badge}
           </span>
         )}
       </div>
-      <span className="text-white/50 text-sm">¥{price}</span>
+      <span className="text-white/40 text-sm">¥{price}</span>
     </div>
     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-      selected ? 'border-brand-primary bg-brand-primary' : 'border-white/30'
+      selected ? 'border-brand-primary bg-brand-primary' : 'border-white/20'
     }`}>
       {selected && <Check className="w-4 h-4 text-white" />}
     </div>
@@ -51,7 +78,15 @@ const RegisterPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [selectedType, setSelectedType] = useState('activity');
   const [member, setMember] = useState(null);
-  const [error, setError] = useState('');
+  const [registrationKey, setRegistrationKey] = useState('');
+  const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   useEffect(() => {
     loadData();
@@ -69,7 +104,6 @@ const RegisterPage = () => {
       setMember(memberData);
     } catch (error) {
       console.error('Failed to load data:', error);
-      setError('加载失败');
     } finally {
       setLoading(false);
     }
@@ -93,16 +127,16 @@ const RegisterPage = () => {
   };
 
   const handleRegister = async () => {
+    if (submitting) return;
     setSubmitting(true);
-    setError('');
 
     try {
       const openid = getOpenId();
-      await registerActivity(id, { openid, type: selectedType });
+      await registerActivity(id, { openid, type: selectedType, key: registrationKey });
       navigate('/registrations', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.error || '报名失败');
-    } finally {
+      const errorMsg = err.response?.data?.error || '报名失败';
+      setToast({ message: errorMsg, type: 'error' });
       setSubmitting(false);
     }
   };
@@ -130,73 +164,153 @@ const RegisterPage = () => {
   const price = getPrice();
 
   return (
-    <div className="min-h-screen pb-36 bg-dark-900">
+    <div className="min-h-screen pb-36 bg-dark-900 relative overflow-hidden">
+      <FloatingOrb delay={0} size="200px" x="-10%" y="5%" />
+      <FloatingOrb delay={2} size="150px" x="70%" y="20%" />
+      <FloatingOrb delay={4} size="180px" x="20%" y="60%" />
+
+      <button
+        onClick={() => navigate(-1)}
+        className="fixed top-4 left-4 z-50 w-11 h-11 bg-dark-800/60 backdrop-blur-xl rounded-2xl flex items-center justify-center border border-white/5"
+      >
+        <ChevronLeft className="w-5 h-5" />
+      </button>
+
       <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="relative px-6 pt-14 pb-6 bg-gradient-to-b from-brand-primary/10 to-transparent"
+        className="relative px-6 pt-16 pb-8"
       >
-        <button
-          onClick={() => navigate(-1)}
-          className="absolute top-4 left-4 w-11 h-11 bg-dark-800/80 backdrop-blur-xl rounded-2xl flex items-center justify-center border border-white/10"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        <h1 className="font-display text-2xl font-bold text-center tracking-wide">
-          报名活动
-        </h1>
+        <div className="text-center">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', duration: 0.6 }}
+            className="w-16 h-16 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center shadow-glow-orange"
+          >
+            <Trophy className="w-8 h-8 text-white" />
+          </motion.div>
+          <h1 className="font-display text-3xl font-bold text-white tracking-wide">
+            确认报名
+          </h1>
+          <p className="text-white/50 mt-2 text-sm">请确认您的报名信息</p>
+        </div>
       </motion.div>
 
-      <div className="px-6 space-y-5">
+      <div className="px-6 space-y-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="card-glass rounded-3xl p-5"
+          className="card-glass rounded-2xl p-4"
         >
-          <h2 className="font-display text-lg font-semibold mb-2">{activity.title}</h2>
-          <div className="flex items-center gap-4 text-sm text-white/50">
-            <span>{formatDate(activity.activity_date)}</span>
-            <span>|</span>
-            <span>{formatTime(activity.start_time)}</span>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-primary/20 to-brand-secondary/10 flex items-center justify-center">
+              <Trophy className="w-6 h-6 text-brand-primary" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-white">{activity.title}</h2>
+              <div className="flex items-center gap-2 text-xs text-white/40">
+                <span>{formatDate(activity.activity_date)}</span>
+                <span className="w-1 h-1 rounded-full bg-white/20" />
+                <span>{formatTime(activity.start_time)}</span>
+              </div>
+            </div>
           </div>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.15 }}
         >
-          <div className="flex items-center gap-2 mb-4">
-            <Trophy className="w-5 h-5 text-brand-primary" />
-            <span className="font-display font-semibold tracking-wide">选择报名类型</span>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="font-display font-semibold tracking-wide text-white/70 text-sm">报名类型</span>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2">
             <TypeOption
               type="activity"
-              label="仅参加活动"
+              label="仅打球"
               price={activity.price_activity}
               selected={selectedType === 'activity'}
               onSelect={setSelectedType}
-              icon={<Trophy className="w-6 h-6" />}
+              icon={<Trophy className="w-5 h-5" />}
             />
             <TypeOption
               type="both"
-              label="活动 + 晚宴"
+              label="晚宴+打球"
               price={activity.price_dinner}
               selected={selectedType === 'both'}
               onSelect={setSelectedType}
-              icon={<UtensilsCrossed className="w-6 h-6" />}
+              icon={<UtensilsCrossed className="w-5 h-5" />}
               badge="推荐"
             />
             <TypeOption
               type="dinner"
-              label="仅参加晚宴"
+              label="仅晚宴"
               price={activity.price_dinner_only}
               selected={selectedType === 'dinner'}
               onSelect={setSelectedType}
-              icon={<UtensilsCrossed className="w-6 h-6" />}
+              icon={<UtensilsCrossed className="w-5 h-5" />}
             />
+          </div>
+        </motion.div>
+
+        <AnimatePresence>
+          {activity.registration_key && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <Key className="w-4 h-4 text-brand-primary" />
+                <span className="font-display font-semibold tracking-wide text-white/70 text-sm">邀请码</span>
+              </div>
+              <div className="card-glass rounded-2xl p-1">
+                <input
+                  type="text"
+                  maxLength={4}
+                  value={registrationKey}
+                  onChange={(e) => setRegistrationKey(e.target.value.replace(/\D/g, ''))}
+                  placeholder="请输入4位邀请码"
+                  className="w-full p-4 bg-transparent border-0 text-white text-center text-2xl tracking-[0.5em] placeholder:text-white/20 focus:outline-none"
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="card-glass rounded-2xl overflow-hidden"
+        >
+          <div className="p-4 space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-white/50">报名类型</span>
+              <span className="text-white font-medium">{getTypeName()}</span>
+            </div>
+            <div className="h-px bg-white/5" />
+            <div className="flex justify-between items-center">
+              <span className="text-white/50">付款方式</span>
+              <span className="text-white/70 text-sm">活动后微信转账</span>
+            </div>
+          </div>
+          <div className="p-4 bg-gradient-to-r from-brand-primary/10 to-brand-secondary/5 border-t border-brand-primary/10">
+            <div className="flex justify-between items-center">
+              <span className="text-white/70">预计费用</span>
+              <motion.span
+                key={price}
+                initial={{ scale: 1.2 }}
+                animate={{ scale: 1 }}
+                className="font-display text-3xl font-bold text-gradient"
+              >
+                ¥{price}
+              </motion.span>
+            </div>
           </div>
         </motion.div>
 
@@ -204,66 +318,37 @@ const RegisterPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="card-glass rounded-3xl p-5"
-        >
-          <p className="font-display font-semibold tracking-wide mb-4">报名确认</p>
-          
-          <div className="space-y-4">
-            <div className="flex justify-between items-center p-3 bg-dark-800/50 rounded-xl">
-              <span className="text-white/50">报名类型</span>
-              <span className="text-white font-medium">{getTypeName()}</span>
-            </div>
-            
-            <div className="h-px bg-white/10" />
-            
-            <div className="flex justify-between items-center p-3 bg-brand-primary/10 rounded-xl border border-brand-primary/20">
-              <span className="text-white/70">预计费用</span>
-              <div className="text-right">
-                <span className="font-display text-3xl font-bold text-brand-primary">¥{price}</span>
-              </div>
-            </div>
-            
-            <div className="flex justify-between items-center p-3 bg-dark-800/50 rounded-xl">
-              <span className="text-white/50">付款方式</span>
-              <span className="text-white font-medium">活动后微信转账</span>
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4"
+          className="bg-gradient-to-r from-amber-500/10 to-orange-500/5 border border-amber-500/10 rounded-2xl p-4"
         >
           <div className="flex items-start gap-3">
             <MessageCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-            <div className="text-amber-400/90 text-sm space-y-2">
-              <p className="font-medium">费用说明</p>
-              <ul className="text-amber-300/80 space-y-1">
+            <div className="text-amber-400/80 text-sm space-y-1.5">
+              <p className="font-medium text-amber-400">费用说明</p>
+              <ul className="text-amber-300/60 space-y-1 text-xs">
                 <li>• 活动结束后根据实际消耗计算费用</li>
                 <li>• 费用 = 场地费 + 用球费 + 晚宴（如参加）</li>
-                <li>• 请添加群主微信，活动结束后转账</li>
               </ul>
             </div>
           </div>
         </motion.div>
 
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4"
-          >
-            <p className="text-red-400 text-sm">{error}</p>
-          </motion.div>
-        )}
       </div>
+
+      <AnimatePresence>
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
+      </AnimatePresence>
 
       <motion.div
         initial={{ y: 100 }}
         animate={{ y: 0 }}
-        className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-dark-900 via-dark-900 to-transparent pt-12"
+        transition={{ delay: 0.35 }}
+        className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-dark-900 via-dark-900 to-transparent pt-12 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]"
       >
         <div className="max-w-[430px] mx-auto">
           <button
@@ -286,9 +371,7 @@ const RegisterPage = () => {
               </>
             ) : (
               <>
-                <Check className="w-5 h-5" />
                 确认报名
-                <ArrowRight className="w-5 h-5" />
               </>
             )}
           </button>

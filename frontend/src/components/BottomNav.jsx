@@ -19,8 +19,8 @@ const BottomNav = () => {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50">
-      <div className="max-w-[430px] mx-auto px-4 pb-6">
+    <div className="w-full bg-transparent z-[100] pb-[env(safe-area-inset-bottom)] shrink-0 absolute bottom-0">
+      <div className="px-4 pb-6 pt-2 bg-transparent">
         <div className="relative">
           <div className="absolute inset-0 bg-dark-800/80 backdrop-blur-xl rounded-3xl border border-white/10" />
           
@@ -65,8 +65,6 @@ const BottomNav = () => {
           </div>
         </div>
       </div>
-      
-      <div className="h-safe-area-inset-bottom bg-gradient-to-t from-dark-900 to-transparent" />
     </div>
   );
 };

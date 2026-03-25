@@ -90,7 +90,7 @@ const RegistrationsPage = () => {
   };
 
   return (
-    <div className="min-h-screen pb-28">
+    <div className="min-h-full pb-6">
       <div className="relative px-6 pt-14 pb-6 bg-gradient-to-b from-brand-primary/10 to-transparent">
         <div className="flex items-center justify-between">
           <div>

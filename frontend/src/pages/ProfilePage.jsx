@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Coins, History, Gift, ChevronRight, ChevronLeft, Minus, Plus, Sparkles, Zap, ArrowRight, Trophy, Camera, Edit2 } from 'lucide-react';
+import { User, Coins, History, Gift, ChevronRight, ChevronLeft, Minus, Plus, Sparkles, ArrowRight, Trophy, Camera, Edit2 } from 'lucide-react';
 import { getMemberProfile, getPointsRecords, updateMemberProfile, uploadImage, getBalanceRecords } from '../api';
 import { getOpenId } from '../utils';
 
@@ -82,7 +82,7 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen pb-28">
+    <div className="min-h-full pb-6">
       <div className="relative px-6 pt-14 pb-8">
         <div className="absolute top-0 left-0 right-0 h-48 bg-gradient-to-b from-brand-primary/20 to-transparent rounded-b-[40px]" />
         
@@ -131,76 +131,73 @@ const ProfilePage = () => {
           </button>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-          className="relative overflow-hidden rounded-3xl"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-brand-primary via-brand-secondary to-brand-light animate-gradient" />
-          <div className="absolute inset-0 bg-black/20" />
-          
-          <div className="relative p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center">
-                <Coins className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-white/80 text-sm">我的积分</p>
-                <div className="flex items-baseline gap-1">
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="font-display text-5xl font-bold"
-                  >
-                    {member?.points || 0}
-                  </motion.span>
-                  <span className="text-white/60">积分</span>
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.15 }}
+            className="relative overflow-hidden rounded-3xl"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-primary via-brand-secondary to-brand-light animate-gradient" />
+            <div className="absolute inset-0 bg-black/20" />
+            
+            <div className="relative p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center">
+                  <Coins className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-white/80 text-xs">我的积分</p>
+                  <div className="flex items-baseline gap-1">
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="font-display text-3xl font-bold"
+                    >
+                      {member?.points || 0}
+                    </motion.span>
+                  </div>
                 </div>
               </div>
+              <p className="text-white/60 text-xs">
+                可兑换商品
+              </p>
             </div>
-            <p className="text-white/70 text-sm">
-              积分可兑换精美商品，继续加油！
-            </p>
-          </div>
-          
-          <div className="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
-        </motion.div>
+          </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.15 }}
-          className="relative overflow-hidden rounded-3xl mt-4"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-green-600 to-green-400" />
-          <div className="absolute inset-0 bg-black/10" />
-          
-          <div className="relative p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-white/80 text-sm">会员卡余额</p>
-                <div className="flex items-baseline gap-1">
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="font-display text-4xl font-bold"
-                  >
-                    ¥{member?.balance || 0}
-                  </motion.span>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            className="relative overflow-hidden rounded-3xl"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-green-600 to-green-400" />
+            <div className="absolute inset-0 bg-black/10" />
+            
+            <div className="relative p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-white/80 text-xs">会员卡余额</p>
+                  <div className="flex items-baseline gap-1">
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="font-display text-3xl font-bold"
+                    >
+                      ¥{member?.balance || 0}
+                    </motion.span>
+                  </div>
                 </div>
               </div>
+              <p className="text-white/60 text-xs">
+                支付活动费用
+              </p>
             </div>
-            <p className="text-white/70 text-sm">
-              余额可用于支付活动费用
-            </p>
-          </div>
-          
-          <div className="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
-        </motion.div>
+          </motion.div>
+        </div>
       </div>
 
       <div className="px-6 space-y-4">
@@ -351,25 +348,6 @@ const ProfilePage = () => {
               ))}
             </div>
           )}
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="card-glass rounded-3xl p-5"
-        >
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-primary/20 flex items-center justify-center flex-shrink-0">
-              <Zap className="w-5 h-5 text-brand-primary" />
-            </div>
-            <div>
-              <p className="font-medium text-white mb-1">积分说明</p>
-              <p className="text-sm text-white/50 leading-relaxed">
-                参加活动支付积分后，等额积分将存入您的账户，可用于兑换商品。取消报名时积分全额退还。
-              </p>
-            </div>
-          </div>
         </motion.div>
       </div>
 
