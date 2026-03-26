@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Coins, History, Gift, ChevronRight, ChevronLeft, Minus, Plus, Sparkles, ArrowRight, Trophy, Camera, Edit2, Settings, X } from 'lucide-react';
+import { User, Coins, History, Gift, ChevronRight, ChevronLeft, Minus, Plus, Sparkles, ArrowRight, Trophy, Camera, Edit2, Settings, X, LogOut } from 'lucide-react';
 import { getMemberProfile, getPointsRecords, updateMemberProfile, uploadImage, getBalanceRecords } from '../api';
-import { getOpenId } from '../utils';
+import { getOpenId, getMember, logout } from '../utils';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -123,12 +123,25 @@ const ProfilePage = () => {
               <p className="text-white/40 text-xs">有效期至: {member.member_expire_date}</p>
             )}
           </div>
-          <button
-            onClick={() => navigate('/settings')}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-          >
-            <Settings className="w-5 h-5 text-white" />
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate('/settings')}
+              className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            >
+              <Settings className="w-5 h-5 text-white" />
+            </button>
+            <button
+              onClick={() => {
+                if (confirm('确定要退出登录吗？')) {
+                  logout();
+                  navigate('/');
+                }
+              }}
+              className="p-2 rounded-full bg-red-500/20 hover:bg-red-500/30 transition-colors"
+            >
+              <LogOut className="w-5 h-5 text-red-400" />
+            </button>
+          </div>
         </motion.div>
 
         <div className="grid grid-cols-2 gap-4 mt-4">

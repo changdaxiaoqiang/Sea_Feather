@@ -10,6 +10,7 @@ const productRoutes = require('./routes/products');
 const adminRoutes = require('./routes/admin');
 const uploadRoutes = require('./routes/upload');
 const systemRoutes = require('./routes/system');
+const wechatRoutes = require('./routes/wechat');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,6 +33,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/upload', uploadRoutes);
 app.use('/api/system', systemRoutes);
+app.use('/api/wechat', wechatRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

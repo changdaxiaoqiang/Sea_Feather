@@ -63,6 +63,10 @@ export const deleteSystemUser = (id) => api.delete(`/system/users/${id}`);
 export const getSystemPermissions = () => api.get('/system/permissions');
 export const systemLogin = (data) => api.post('/system/login', data);
 
+export const wechatLogin = (code) => api.post('/wechat/login', { code });
+export const wechatStatus = (openid) => api.get('/wechat/status', { params: { openid } });
+export const getWechatConfig = (redirectUri) => api.get('/wechat/config', { params: { redirectUri } });
+
 export const uploadImage = (formData) => {
   return axios.post(`${API_BASE}/admin/upload`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }

@@ -34,7 +34,9 @@ router.post('/', upload.single('image'), (req, res) => {
       return res.status(400).json({ error: '请上传图片' });
     }
     
-    const url = `/uploads/${req.file.filename}`;
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const url = `${protocol}://${host}/uploads/${req.file.filename}`;
     res.json({ url });
   } catch (error) {
     res.status(500).json({ error: error.message });
