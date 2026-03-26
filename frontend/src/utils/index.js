@@ -1,8 +1,8 @@
 const OPENID_KEY = 'seafeather_openid';
 const MEMBER_KEY = 'seafeather_member';
+const TOKEN_KEY = 'seafeather_token';
 
 export const getOpenId = () => localStorage.getItem(OPENID_KEY);
-
 export const setOpenId = (openid) => localStorage.setItem(OPENID_KEY, openid);
 
 export const getMember = () => {
@@ -11,6 +11,25 @@ export const getMember = () => {
 };
 
 export const setMember = (member) => localStorage.setItem(MEMBER_KEY, JSON.stringify(member));
+
+export const getToken = () => localStorage.getItem(TOKEN_KEY);
+export const setToken = (token) => localStorage.setItem(TOKEN_KEY, token);
+
+export const isLoggedIn = () => {
+  return !!getOpenId() && !!getMember();
+};
+
+export const logout = () => {
+  localStorage.removeItem(OPENID_KEY);
+  localStorage.removeItem(MEMBER_KEY);
+  localStorage.removeItem(TOKEN_KEY);
+};
+
+export const getWechatAuthUrl = (redirectUri) => {
+  const appId = 'wx395b4fb84bc93a27';
+  const encodedUri = encodeURIComponent(redirectUri);
+  return `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${appId}&redirect_uri=${encodedUri}&response_type=code&scope=snsapi_userinfo#wechat_redirect`;
+};
 
 export const formatDate = (date) => {
   const d = new Date(date);

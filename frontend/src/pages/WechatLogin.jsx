@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Flame, Wechat } from 'lucide-react';
+import { Flame, MessageCircle } from 'lucide-react';
 import { wechatLogin, getWechatConfig } from '../api';
 import { setOpenId, setMember, setToken, getWechatAuthUrl, isLoggedIn } from '../utils';
 
@@ -75,7 +75,7 @@ const WechatLogin = () => {
               boxShadow: '0 4px 20px rgba(7, 193, 96, 0.4)'
             }}
           >
-            <Wechat className="w-6 h-6" />
+            <MessageCircle className="w-6 h-6" />
             微信授权登录
           </button>
           

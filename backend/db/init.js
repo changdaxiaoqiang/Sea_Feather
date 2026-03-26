@@ -132,6 +132,30 @@ async function initDB() {
         FOREIGN KEY (product_id) REFERENCES products(id)
       )
     `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS admin_users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        role TEXT DEFAULT 'admin',
+        permissions TEXT DEFAULT '[]',
+        status INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Insert default admin user if not exists (password: admin123)
+    const adminCheck = db.exec('SELECT id FROM admin_users WHERE username = "admin"');
+    if (adminCheck.length === 0 || adminCheck[0].values.length === 0) {
+      const crypto = require('crypto');
+      const hash = crypto.createHash('sha256').update('admin123').digest('hex');
+      db.run(
+        'INSERT INTO admin_users (username, password, role, permissions) VALUES (?, ?, ?, ?)',
+        ['admin', hash, 'super_admin', JSON.stringify(['all'])]
+      );
+    }
     
     saveDB();
     console.log('Database initialized successfully');

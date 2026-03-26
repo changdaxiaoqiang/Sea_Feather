@@ -61,7 +61,7 @@ export const createSystemUser = (data) => api.post('/system/users', data);
 export const updateSystemUser = (id, data) => api.put(`/system/users/${id}`, data);
 export const deleteSystemUser = (id) => api.delete(`/system/users/${id}`);
 export const getSystemPermissions = () => api.get('/system/permissions');
-export const systemLogin = (data) => api.post('/system/login', data);
+export const systemLogin = (data) => api.post('/auth/admin/login', data);
 
 export const wechatLogin = (code) => api.post('/wechat/login', { code });
 export const wechatStatus = (openid) => api.get('/wechat/status', { params: { openid } });
